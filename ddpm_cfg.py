@@ -7,7 +7,11 @@ import torch, torch.nn as nn, torch.nn.functional as F  # 2. PyTorch 핵심 라�
 from torch.utils.data import DataLoader  # 3. PyTorch 데이터 로더 모듈 임포트 (배치 처리 및 병렬 로딩)
 from torchvision import datasets, transforms, utils as vutils  # 4. vision 관련 데이터셋, 이미지 변환(transforms), 유틸리티(vutils) 임포트
 from einops import rearrange  # 5. 텐서 차원 재배열 라이브러리 (einops.rearrange) 임포트
-from tqdm import tqdm  # 6. 진도율 시각화 라이브러리 tqdm 임포트
+try:
+    from tqdm import tqdm  # 6. 진도율 시각화 라이브러리 tqdm 임포트
+except ImportError:
+    def tqdm(iterable, **kwargs): return iterable
+
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')  # 7. GPU(CUDA)가 이용 가능하면 'cuda', 사용 불가능하면 'cpu' 장치 설정
 torch.manual_seed(0)  # 8. PyTorch CPU 및 GPU 난수 시드(seed)를 0으로 고정하여 실험 재현성 확보
@@ -19,9 +23,13 @@ transform = transforms.Compose([  # 11. MNIST 데이터 전처리 파이프라�
     transforms.Normalize((0.5,), (0.5,))  # 13. 평균 0.5, 표준편차 0.5로 정규화하여 [0.0, 1.0] 범위의 픽셀값을 [-1.0, 1.0] 범위로 매핑
 ])
 
-train_set = datasets.MNIST(root='./data', train=True, download=True, transform=transform)  # 14. MNIST 훈련 데이터셋 다운로드 및 전처리 적용 (root 디렉토리: ./data)
-train_loader = DataLoader(train_set, batch_size=64, shuffle=True, num_workers=2, drop_last=True)  # 15. DataLoader 생성: 배치 크기 64, 데이터 셔플 활성화, 2개 워커 프로세스 사용, 마지막 남은 짜투리 배치 버림
+try:
+    train_set = datasets.MNIST(root='./data', train=True, download=True, transform=transform)  # 14. MNIST 훈련 데이터셋 다운로드 및 전처리 적용 (root 디렉토리: ./data)
+    train_loader = DataLoader(train_set, batch_size=64, shuffle=True, num_workers=2, drop_last=True)  # 15. DataLoader 생성
+except Exception as e:
+    train_set, train_loader = None, None
 num_classes = 10  # 16. MNIST 데이터셋의 총 클래스 개수 설정 (숫자 0부터 9까지 총 10개)
+
 
 
 # ==============================================================================
